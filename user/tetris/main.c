@@ -11,10 +11,10 @@
 #define M_SQRT1_2   0.7071067811865476
 #endif
 
-#define MINO_W      12
+#define MINO_W      11
 
-#define MATRIX_X1   ((256 - MATRIX_W * MINO_W) / 2)
-#define MATRIX_Y1   (256 - (256 - MATRIX_HV * MINO_W) / 2)
+#define MATRIX_X1   ((400 - MATRIX_W * MINO_W) / 2)
+#define MATRIX_Y1   (240 - (240 - MATRIX_HV * MINO_W) / 2)
 #define MATRIX_X2   (MATRIX_X1 + MATRIX_W * MINO_W)
 #define MATRIX_Y2   (MATRIX_Y1 - MATRIX_HV * MINO_W)
 
@@ -22,7 +22,7 @@
 #define CHAR_H  14
 static uint8_t font_data[CHAR_W * CHAR_H * 16 * 6];
 
-static uint8_t buf[256][256][3];
+static uint8_t buf[240][400][3];
 
 #define SCR_MENU    0
 #define SCR_GAME    1
@@ -46,21 +46,21 @@ static void game_draw();
 static void overlay_init();
 static void overlay_draw();
 
-static inline void pix(uint8_t x, uint8_t y, uint8_t r, uint8_t g, uint8_t b)
+static inline void pix(uint16_t x, uint16_t y, uint8_t r, uint8_t g, uint8_t b)
 {
     buf[y][x][2] = r;
     buf[y][x][1] = g;
     buf[y][x][0] = b;
 }
 
-static inline void pix_semi(uint8_t x, uint8_t y, uint8_t r, uint8_t g, uint8_t b)
+static inline void pix_semi(uint16_t x, uint16_t y, uint8_t r, uint8_t g, uint8_t b)
 {
     buf[y][x][2] += ((r - buf[y][x][2]) >> 2) * 3;
     buf[y][x][1] += ((g - buf[y][x][1]) >> 2) * 3;
     buf[y][x][0] += ((b - buf[y][x][0]) >> 2) * 3;
 }
 
-static inline void pix_alpha(uint8_t x, uint8_t y, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+static inline void pix_alpha(uint16_t x, uint16_t y, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
     buf[y][x][2] += ((uint16_t)(r - buf[y][x][2]) * a) >> 8;
     buf[y][x][1] += ((uint16_t)(g - buf[y][x][1]) * a) >> 8;
@@ -68,18 +68,18 @@ static inline void pix_alpha(uint8_t x, uint8_t y, uint8_t r, uint8_t g, uint8_t
 }
 
 static inline void lineh(
-    uint8_t x1, uint8_t x2, uint8_t y, uint8_t r, uint8_t g, uint8_t b)
+    uint16_t x1, uint16_t x2, uint16_t y, uint8_t r, uint8_t g, uint8_t b)
 {
     for (; x1 <= x2; x1++) pix(x1, y, r, g, b);
 }
 
 static inline void linev(
-    uint8_t x, uint8_t y1, uint8_t y2, uint8_t r, uint8_t g, uint8_t b)
+    uint16_t x, uint16_t y1, uint16_t y2, uint8_t r, uint8_t g, uint8_t b)
 {
     for (; y1 <= y2; y1++) pix(x, y1, r, g, b);
 }
 
-static inline void text_char(uint8_t x, uint8_t y, signed char ch)
+static inline void text_char(uint16_t x, uint16_t y, signed char ch)
 {
     if (ch < 32) return;
     uint8_t row = (ch - 32) / 16;
@@ -93,7 +93,7 @@ static inline void text_char(uint8_t x, uint8_t y, signed char ch)
         }
 }
 
-static inline void text_str(uint8_t x, uint8_t y, const char *str)
+static inline void text_str(uint16_t x, uint16_t y, const char *str)
 {
     while (*str != 0) {
         text_char(x, y, *(str++));
@@ -101,7 +101,7 @@ static inline void text_str(uint8_t x, uint8_t y, const char *str)
     }
 }
 
-static inline void text_xcen(uint8_t x, uint8_t y, const char *str)
+static inline void text_xcen(uint16_t x, uint16_t y, const char *str)
 {
     size_t n = strlen(str);
     if (n > 0) text_str(x - (n * CHAR_W / 2), y, str);
@@ -120,7 +120,7 @@ static const uint8_t bg[] = {
 
 static uint16_t particle_count = 0;
 static struct particle {
-    uint8_t x, y;
+    uint16_t x, y;
     uint8_t r, g, b;
     float vx, vy;
     uint32_t t;
@@ -134,7 +134,7 @@ static inline uint32_t mrand()
     return (seed = ((seed * 1103515245) + 12345) & 0x7fffffff);
 }
 
-static inline void add_particle(uint32_t T, uint8_t x, uint8_t y, uint8_t r, uint8_t g, uint8_t b)
+static inline void add_particle(uint32_t T, uint16_t x, uint16_t y, uint8_t r, uint8_t g, uint8_t b)
 {
     if (particle_count >= PARTICLES_MAX) return;
     float a = (float)mrand() / 0x80000000u * M_PI * 2;
@@ -156,8 +156,8 @@ static inline void update_and_draw_particles()
             float r0 = (float)(T - particles[i].t) / particles[i].life;
             float r = 1 - expf(-r0 * 5);
             pix_alpha(
-                (uint8_t)(particles[i].x + particles[i].vx * r),
-                (uint8_t)(particles[i].y + particles[i].vy * r),
+                (uint16_t)(particles[i].x + particles[i].vx * r),
+                (uint16_t)(particles[i].y + particles[i].vy * r),
                 particles[i].r, particles[i].g, particles[i].b,
                 (uint8_t)(255 * (1 - r0) + 0.5f));
         }
@@ -186,8 +186,8 @@ static void menu_update()
         game_init();
     }
     if ((b0 & BUTTON_CIR) && !(b1 & BUTTON_CIR)) {
-        uint8_t x = mrand() % 128 + 64;
-        uint8_t y = mrand() % 128 + 64;
+        uint16_t x = mrand() % 128 + 64;
+        uint16_t y = mrand() % 128 + 64;
         for (uint8_t i = 0; i < 64; i++)
             add_particle(T, x, y,
                 mrand() % 128 + 128, mrand() % 128 + 128, mrand() % 128 + 128);
@@ -201,20 +201,20 @@ static void menu_update()
 
 static void menu_draw()
 {
-    text_xcen(128, 64, "= T E T R I S =");
-    text_xcen(128, 128, "Marathon");
-    text_xcen(128, 128 + 24, "Sprint");
-    text_xcen(128, 128 + 48, "Ultra");
+    text_xcen(200, 60, "= T E T R I S =");
+    text_xcen(200, 120, "Marathon");
+    text_xcen(200, 120 + 24, "Sprint");
+    text_xcen(200, 120 + 48, "Ultra");
 
-    int8_t x = sinf((float)T * 0.06f) * 1.9;
-    uint8_t y = menu_sel * 24;
+    int16_t x = sinf((float)T * 0.06f) * 1.9;
+    uint16_t y = menu_sel * 24;
     if (menu_sel_time + MENU_TRANSITION_DUR >= T) {
         float rate = expf((float)(T - menu_sel_time) / MENU_TRANSITION_DUR * -4);
         y -= (menu_sel - last_menu_sel) * rate * 24;
     }
 
-    text_char(72 - CHAR_W / 2 + x, 131 + y, '~');
-    text_char(184 - CHAR_W / 2 - x, 131 + y, '~');
+    text_char(144 - CHAR_W / 2 + x, 123 + y, '~');
+    text_char(256 - CHAR_W / 2 - x, 123 + y, '~');
 
     update_and_draw_particles();
 }
@@ -281,8 +281,8 @@ static void game_update()
             for (uint8_t i = 0, k = 0; i < MATRIX_H; i++) if (action & (1 << i)) {
                 for (uint8_t c = 0; c < MATRIX_W; c++) {
                     // Generate a block of particles
-                    uint8_t x0 = MATRIX_X1 + c * MINO_W;
-                    uint8_t y0 = MATRIX_Y1 - (i + 1) * MINO_W;
+                    uint16_t x0 = MATRIX_X1 + c * MINO_W;
+                    uint16_t y0 = MATRIX_Y1 - (i + 1) * MINO_W;
                     uint8_t t = recent_clear[k][c];
                     uint8_t r = MINO_COLOURS[t][0] + ((255 - MINO_COLOURS[t][0]) >> 1);
                     uint8_t g = MINO_COLOURS[t][1] + ((255 - MINO_COLOURS[t][1]) >> 1);
@@ -311,11 +311,11 @@ static void game_update()
 }
 
 // Top-left corner
-static inline void draw_mino(uint8_t row, uint8_t col, uint8_t t)
+static inline void draw_mino(int8_t row, int8_t col, uint8_t t)
 {
     if (row >= MATRIX_HV) return;
-    uint8_t x = MATRIX_X1 + col * MINO_W;
-    uint8_t y = MATRIX_Y1 - (row + 1) * MINO_W;
+    uint16_t x = MATRIX_X1 + col * MINO_W;
+    uint16_t y = MATRIX_Y1 - (row + 1) * MINO_W;
     for (int i = 0; i < MINO_W; i++)
     for (int j = 0; j < MINO_W; j++) {
         uint8_t r = MINO_COLOURS[t][0];
@@ -337,8 +337,8 @@ static inline void draw_mino(uint8_t row, uint8_t col, uint8_t t)
 static inline void draw_mino_ghost(uint8_t row, uint8_t col, uint8_t t)
 {
     if (row >= MATRIX_HV) return;
-    uint8_t x = MATRIX_X1 + col * MINO_W;
-    uint8_t y = MATRIX_Y1 - (row + 1) * MINO_W;
+    uint16_t x = MATRIX_X1 + col * MINO_W;
+    uint16_t y = MATRIX_Y1 - (row + 1) * MINO_W;
     for (int i = 0; i < MINO_W; i++)
     for (int j = 0; j < MINO_W; j++)
         pix_semi(x + i, y + j,
@@ -373,7 +373,7 @@ static inline void draw_matrix()
             drop_type);
 
     // Hold
-    text_str(10, 10, "Hold");
+    text_str(82, 10, "Hold");
     if (hold_type != MINO_NONE)
         for (int i = 0; i < 4; i++)
             draw_mino(
@@ -382,13 +382,13 @@ static inline void draw_matrix()
                 hold_type);
 
     // Preview
-    text_str(201, 10, "Next");
+    text_str(269, 10, "Next");
     for (int i = 0; i < 4; i++)     // Preview index
     for (int j = 0; j < 4; j++) {   // Mino index
         uint8_t t = drop_next[(drop_pointer + i) % 14];
         draw_mino(
             MATRIX_HV - 2 - i * 3 - TETRO[t].bbsize + TETRO[t].mino[0][j][0],
-            MATRIX_W + 1 + TETRO[t].mino[0][j][1],
+            MATRIX_W + 2 + TETRO[t].mino[0][j][1],
             t);
     }
 
@@ -396,14 +396,14 @@ static inline void draw_matrix()
 
     char s[4] = { 0 };
 
-    text_str(10, 128, "Clear");
+    text_str(82, 120, "Clear");
     s[0] = '0' + clear_count / 100;
     s[1] = '0' + clear_count / 10 % 10;
     s[2] = '0' + clear_count % 10;
-    text_str(32, 144, s);
+    text_str(104, 136, s);
 
     if (mode == MODE_MARATHON) {
-        text_str(10, 180, "Level");
+        text_str(82, 172, "Level");
         s[0] = '0' + level / 100;
         s[1] = '0' + level / 10 % 10;
         s[2] = '0' + level % 10;
@@ -411,14 +411,14 @@ static inline void draw_matrix()
             s[0] = ' ';
             if (s[1] == '0') s[1] = ' ';
         }
-        text_str(32, 196, s);
+        text_str(104, 188, s);
     } else {
-        text_str(10, 180, "Time");
+        text_str(82, 172, "Time");
         uint32_t time = (mode == MODE_SPRINT ? T / 60 : ULTRA_DURATION - (T / 60));
         s[0] = '0' + time / 100;
         s[1] = '0' + time / 10 % 10;
         s[2] = '0' + time % 10;
-        text_str(32, 196, s);
+        text_str(104, 188, s);
     }
 }
 
@@ -455,13 +455,20 @@ void overlay_draw()
     const char *msg = (screen == SCR_WIN ?
         (mode == MODE_SPRINT ? "Supercalifragilisticexpialidocious" : "It's been great work!") :
         (mode == MODE_MARATHON ? "It's been great work!" : "Oops! Try again"));
-    text_xcen(128, 96, msg);
-    text_str(83, 128, "[X] - Restart");
-    text_str(83, 144, "[O] - Back");
+    text_xcen(200, 88, msg);
+    text_str(155, 120, "[X] - Restart");
+    text_str(155, 136, "[O] - Back");
 }
 
 
 ////// MAIN //////
+
+void bg_draw()
+{
+    for (uint16_t y = 0; y < 240; y++)
+    for (uint16_t x = 0; x < 400; x++)
+        memcpy(buf[y][x], bg + ((x * 256 / 400) + ((y + 80) * 256 / 400) * 256) * 3, 3);
+}
 
 void init()
 {
@@ -483,7 +490,7 @@ void update()
 
 void *draw()
 {
-    memcpy(buf, bg, sizeof buf);
+    bg_draw();
     switch (screen) {
         case SCR_MENU: menu_draw(); break;
         case SCR_GAME: game_draw(); break;

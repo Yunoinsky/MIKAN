@@ -9,12 +9,12 @@
 
 #include "api.h"
 
-#define WIN_W   512
-#define WIN_H   512
-
 #define FPS     60
-#define TEX_W   256
-#define TEX_H   256
+#define TEX_W   400
+#define TEX_H   240
+
+#define WIN_W   (TEX_W * 2)
+#define WIN_H   (TEX_H * 2)
 
 static GLFWwindow *window; 
 static bool buttons_updated = false;
